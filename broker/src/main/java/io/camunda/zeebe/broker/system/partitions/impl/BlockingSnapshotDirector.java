@@ -26,7 +26,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import org.slf4j.Logger;
 
 @ThreadSafe
-public class ThreadSafeSnapshotDirector
+public class BlockingSnapshotDirector
     implements AutoCloseable, SnapshotDirector, RaftCommittedEntryListener {
   private static final Logger LOG = Loggers.SNAPSHOT_LOGGER;
 
@@ -43,7 +43,7 @@ public class ThreadSafeSnapshotDirector
   private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
   private final ActorCompatability actorCompatability;
 
-  public ThreadSafeSnapshotDirector(
+  public BlockingSnapshotDirector(
       final ActorCompatability actorCompatability,
       final StateController stateController,
       final StreamProcessor streamProcessor,
