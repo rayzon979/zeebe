@@ -66,8 +66,10 @@ public final class ReplayStateMachine implements LogRecordAwaiter {
   private final RetryStrategy replayStrategy;
 
   private final BooleanSupplier abortCondition;
-  // current iteration
+
+  // Position of the source record of already replayed batch
   private long lastSourceEventPosition = StreamProcessor.UNSET_POSITION;
+  // Position of the source record of the batch replaying in the current iteration
   private long batchSourceEventPosition = StreamProcessor.UNSET_POSITION;
 
   private long snapshotPosition;
@@ -115,8 +117,6 @@ public final class ReplayStateMachine implements LogRecordAwaiter {
   ActorFuture<LastProcessingPositions> startRecover(final long snapshotPosition) {
     recoveryFuture = new CompletableActorFuture<>();
     this.snapshotPosition = snapshotPosition;
-    lastSourceEventPosition =
-        snapshotPosition > 0 ? snapshotPosition : StreamProcessor.UNSET_POSITION;
 
     // start after snapshot
     logStreamBatchReader.seekToNextBatch(snapshotPosition);
@@ -165,10 +165,9 @@ public final class ReplayStateMachine implements LogRecordAwaiter {
                   } else {
                     // observe the replay duration
                     replayDurationTimer.close();
-                    // the position should be visible only after the batch is replayed successfully
-                    lastSourceEventPosition =
-                        Math.max(lastSourceEventPosition, batchSourceEventPosition);
-                    replayMetrics.setLastSourcePosition(lastSourceEventPosition);
+
+                    lastSourceEventPosition = batchSourceEventPosition;
+                    replayMetrics.setLastSourcePosition(batchSourceEventPosition);
                     actor.submit(this::replayNextEvent);
 
                     notifyReplayListener();
